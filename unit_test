@@ -1,0 +1,84 @@
+import unittest
+import re
+
+class TestPasswordChecker(unittest.TestCase):
+    
+    def test_strong_passwords(self):
+        """Тестируем надежные пароли"""
+        strong_passwords = [
+            "StrongP@ss1",
+            "MyP@ssw0rd!",
+            "Aa1!aaaa",
+            "Test123$%^",
+            "Пароль123!",  # русские буквы
+            "МойП@роль1",  # русские буквы
+            "Тест123$%^",  # русские буквы
+        ]
+        
+        for password in strong_passwords:
+            with self.subTest(password=password):
+                result = check_password_strength(password)
+                self.assertEqual(result, "Надежный пароль")
+    
+    def test_weak_passwords(self):
+        """Тестируем слабые пароли"""
+        weak_passwords = [
+            "short1A",
+            "nouppercase1!",
+            "NOLOWERCASE1!",
+            "NoNumbers!",
+            "NoSpecial123",
+            "12345678",
+            "abcdefgh",
+            "Another123",
+            "пароль123",    # нет заглавных букв и спецсимволов
+            "ПАРОЛЬ123!",   # нет строчных букв
+            "Парольбезцифр!", # нет цифр
+            "Пароль123",    # нет спецсимволов
+        ]
+        
+        for password in weak_passwords:
+            with self.subTest(password=password):
+                result = check_password_strength(password)
+                self.assertEqual(result, "Слабый пароль")
+    
+    def test_find_passwords_in_text(self):
+        """Тестируем поиск паролей в тексте"""
+        test_text = """
+        Вот некоторые строки: 
+        StrongP@ss1 - это надежный пароль,
+        weakpass - слабый,
+        Another123$ тоже хороший,
+        simple не подойдет.
+        Test123! еще один надежный.
+        Пароль123! - с русскими буквами,
+        МойП@роль1 - тоже надежный,
+        Another123 - этот не должен находиться (нет спецсимвола)
+        пароль123 - тоже слабый (нет заглавных)
+        """
+        
+        found = find_passwords_in_text(test_text)
+        expected = ["StrongP@ss1", "Another123$", "Test123!", "Пароль123!", "МойП@роль1"]
+        self.assertEqual(found, expected)
+    
+    def test_empty_password(self):
+        """Тестируем пустой пароль"""
+        result = check_password_strength("")
+        self.assertEqual(result, "Слабый пароль")
+
+def check_password_strength(password):
+    pattern = r'^(?=.*[a-zа-я])(?=.*[A-ZА-Я])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};\':"\\|,.<>\/?]).{8,}$'
+    return "Надежный пароль" if re.match(pattern, password) else "Слабый пароль"
+
+def find_passwords_in_text(text):
+    potential_passwords = re.findall(r'[A-Za-zА-Яа-я\d!@#$%^&*()_+\-=\[\]{};\':"\\|,.<>\/?]{8,}', text)
+    strong_passwords = []
+    
+    for password in potential_passwords:
+        if check_password_strength(password) == "Надежный пароль":
+            strong_passwords.append(password)
+    
+    return strong_passwords
+
+if __name__ == "__main__":
+    unittest.main()
